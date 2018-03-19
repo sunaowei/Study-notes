@@ -86,7 +86,7 @@ Docker官方并没有提供docker registry的用户界面，对权限的控制�
 #DO NOT use localhost or 127.0.0.1, because Harbor needs to be accessed by external clients.【服务器域名】
 hostname = 192.168.120.85
 
-#The protocol for accessing the UI and token/notification service, by default it is http.【UI组件访问协议 http/https,默认为http,启用SSL需要配置ngix,下面会详细介绍】
+#The protocol for accessing the UI and token/notification service, by default it is http.【UI组件访问协议 http/https,默认为http,启用SSL需要配置nginx,下面会详细介绍】
 #It can be set to https if ssl is enabled on nginx.
 ui_url_protocol = https
 
@@ -187,9 +187,7 @@ verify_remote_cert = on
 1. 生成CA证书
 
 ```shell
-➜ openssl req \
->     -newkey rsa:4096 -nodes -sha256 -keyout ca.key \
->     -x509 -days 365 -out ca.crt
+➜ openssl req -newkey rsa:4096 -nodes -sha256 -keyout ca.key  -x509 -days 365 -out ca.crt
 ```
 
 此处需要配置相关的组织结构信息。请自行设置。
@@ -197,9 +195,7 @@ verify_remote_cert = on
 2. 生成证书签名请求
 
 ```Shell
-➜ openssl req \
->     -newkey rsa:4096 -nodes -sha256 -keyout yourdomain.com.key \
->     -out yourdomain.com.csr
+➜ openssl req -newkey rsa:4096 -nodes -sha256 -keyout yourdomain.com.key -out yourdomain.com.csr
 ```
 
 *yourdomain.com* 为你的域名，如果是IP地址可以随意设置。此处我们使用的是IP地址，所以设置为**hcregistry**
@@ -208,8 +204,7 @@ verify_remote_cert = on
 
 ```shell
 ➜ echo subjectAltName = IP:192.168.120.85 > extfile.cnf
-➜ openssl x509 -req -days 365 -in hcregistry.csr -CA ca.crt -CAkey ca.key \
- -CAcreateserial -extfile extfile.cnf -out hcregistry.crt
+➜ openssl x509 -req -days 365 -in hcregistry.csr -CA ca.crt -CAkey ca.key -CAcreateserial -extfile extfile.cnf -out hcregistry.crt
 ```
 
 4. Copy证书到指定路径

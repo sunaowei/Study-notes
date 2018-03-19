@@ -6,6 +6,25 @@
 
 
 
+### 前言
+
+`alpine`内嵌`BusyBox`,`apline`的`crontab`实际上是`BusyBox`的`crond`的服务。
+
+我们看一下，`crontab`默认的配置文件
+
+```Shell
+/usr/local/tomcat/bin # cat /var/spool/cron/crontabs/root
+# do daily/weekly/monthly maintenance
+# min	hour	day	month	weekday	command
+*/15	*	*	*	*	run-parts /etc/periodic/15min
+0	*	*	*	*	run-parts /etc/periodic/hourly
+0	2	*	*	*	run-parts /etc/periodic/daily
+0	3	*	*	6	run-parts /etc/periodic/weekly
+0	5	1	*	*	run-parts /etc/periodic/monthly
+```
+
+我们可以看到 默认配置了15min ，每小时，每天，每周，每月的定时任务。如果需要增加其他时候的定时任务，可以修改这个文件，添加需要的配置。
+
 ### 安装
 
 ```shell
@@ -16,9 +35,7 @@ Executing busybox-1.26.2-r5.trigger
 OK: 80 MiB in 52 packages
 ```
 
-### 配置
-
-`logrotate`会每天执行一个默认的`cron job`，默认的`cron job` 如下：
+安装上我们需要的`logrotate`之后，`logrotate`会自动在`/etc/periodic/daily`文件夹下创建一个默认的`cron job`,默认的`logrotate`内容如下：
 
 ```Shell
 /usr/sbin # cat /etc/periodic/daily/logrotate
@@ -39,6 +56,8 @@ if [ $EXITVALUE != 0 ]; then
 fi
 exit 0
 ```
+
+如果需要改成其他时间运行，将`/etc/periodic/daily`下的`logrotate`文件copy到执行时间下的文件夹内即可，我们将其copy到`/etc/periodic/hourly`下，使其每小时运行一次。
 
 默认执行的`logrotate`配置文件如下：
 
@@ -82,17 +101,13 @@ include /etc/logrotate.d
     dateformat -%Y-%m-%d-%s.log
     missingok
     olddir oldlogs
-    firstscript
-        if [ ! -d "./oldlogs" ]; then
-            mkdir oldlogs
-        fi
-    endscript
+    notifempty
     postrotate
-        find . -name "*.log" | while read file
+        find oldlogs -name "*.log" | while read file
         do
-        DATE=$(date +%Y%m%d-%H)
-        mv $file ./catalina-${DATE}.out
-        gzip ./catalina-${DATE}.out.gz
+        DATE=$(date +%Y%m%d-%H:%M:%S)
+        mv $file oldlogs/catalina-${DATE}.out
+        gzip oldlogs/catalina-${DATE}.out
         done
     endscript
 }
